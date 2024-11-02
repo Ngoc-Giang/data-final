@@ -1,0 +1,336 @@
+# thư viện xử lý dl dataframe (table)
+import pandas as pd 
+# biểu đồ phân tích dữ liệu
+import seaborn as sns
+# vẽ hình
+import matplotlib.pyplot as plt
+#tính toán số
+import numpy as np
+# load dữ liệu
+df = pd.read_csv('dulieuxettuyendaihoc.csv',header=0,delimiter=',',encoding='utf-8')
+
+
+df = df[['GT','DT','KV','KT','M1','M2','M3','NGAYTHI','DINHHUONGNGHENGHIEP']]
+
+# Data Manipulation
+# cột dân tộc (DT) bị thiếu
+df.info()
+
+# đổi tên cột
+df.rename(columns={'NGAYTHI':'NT',
+                   'DINHHUONGNGHENGHIEP':'NGHE'}, 
+                   inplace=True)
+
+# hiện 5 dòng dl đầu tiên
+df.head(5)
+
+# Loại bỏ hết tất cả dòng bị rỗng
+df.dropna(how='all', inplace=True)
+
+# Loại bỏ hết tất cả dòng bị trùng
+df.drop_duplicates(inplace=True)
+
+
+plt.figure(figsize=(10,6))
+sns.heatmap(df.isna().transpose(),cmap='YlGnBu',
+            cbar_kws={'label':'Dữ liệu thiếu'})
+plt.savefig('missingdata.png', dpi=100)
+plt.show()
+#  sau khi chạy  phần "Điền giá trị bị thiếu" và chạy lại "plt.figure(figsize=(10,6))" ko còn thiếu
+# Điền giá trị bị thiếu
+df['DT'].fillna('KINH', inplace=True)
+# lưu ý: vs biến định tính ta có thể thay đổi
+# bằng giá trị yếu vị (mods)
+# 
+# điền thiếu gtri phần DIEMTHI1 bằng trung bình (nếu có)
+df['M1'].fillna(df['M1'].mean(), inplace=True)
+# ......trung vị
+df['M2'].fillna(df['M2'].median(), inplace=True)
+# ......bằng 0
+df['M3'].fillna(0, inplace=True)
+# Kỹ thuật Feature Engineering (thường dùng cho Machine lEARNING)
+# Tạo cột dữ liệu
+df['TBM'] = (df['M1']+df['M2']+df['M3'])/3
+df
+# Tạo biến Xếploai: đánh giá môn toán dựa trên
+df.loc[df['TBM'] < 5.0, 'XL'] = 'FAIL'
+df.loc[(df['TBM'] >= 5.0) & 
+       (df['TBM'] < 7.0), 'XL'] = 'FAIR'
+df.loc[(df['TBM'] >= 7.0) & 
+       (df['TBM'] < 9.0), 'XL'] = 'GOOD'
+df.loc[df['TBM'] >= 9.0, 'XL'] = 'EXCEL'
+df
+# Tạo biến nhóm khối thi: Nhom thỏa mãn
+# A: GROUP1 (G1)
+# C: GROUP3 (G3)
+# ...........
+dict_map = {
+    'A1':'G1', 'C':'G3', 'D1': 'G3', 'A': 'G1', 'B': 'G2'
+}
+df['NHOM'] = df['KT'].map(dict_map)
+df
+
+# Tạo biến số điểm cộng
+# nếu nhom thuộc nhóm G1, G2 và TBM>=5.0 THÌ TRẢ VỀ 1
+# NGƯỢC LẠI trả về 0
+def fplus(x,y):
+    if (x == 'G1' or x == 'G2') and (y >= 4.0):
+        return 1.0
+    else:
+        return 0.0
+df['PLUS'] = list(map(fplus,df['NHOM'],df['TBM']))
+df    
+# PHẦN 3: TRỰC QUAN HÓA DỮ LIỆU
+# Data Visualization : trực quan hóa dữ liệu
+# HÃY trực quan hóa dữ liệu THEO GIỚI TÍNH
+sns.countplot(x='GT', data=df)
+plt.show()
+# đA SỐ LÀ DT kinh
+sns.countplot(x='DT', data=df)
+plt.show()
+sns.countplot(x='NHOM', data=df)
+plt.show()
+# Hãy so sánh sl 
+sns.countplot(x='KT', hue='GT',data=df)
+plt.show()
+# hãy ss khối A có sv khu vực nào đk nhiều nhất
+sns.countplot(x='KV', hue='KT',data=df)
+plt.show()
+# ss trung bình M1 theo giới tính
+sns.barplot(x='GT', y='M1', data=df, errorbar=None)
+plt.show()
+# điểm tb nữ lớn hơn ->nam học chưa tốt bằng nữa
+# ss trung bình M2 theo NHOM
+sns.barplot(x='NHOM', y='M2', data=df, errorbar=None)
+plt.show()
+# HÃY CHO BIẾT ĐIỂM TB M1 CỦA NHÓM KT THEO GT NÀO LỚN NHẤT
+sns.barplot(x='KT', y='M1', hue='GT', data=df, errorbar=None)
+plt.show()
+# KHỐI C lớn nhất
+# ss sai số trên nhóm gt theo kt
+sns.barplot(x='GT', y='M1', hue='KT', data=df)
+plt.show()
+# đường đen càng dài thì sai số càng lớn
+# Nhóm M khối D1 sai số lớn nhất
+sns.barplot(x='KV', y='M1', hue='KT', data=df, 
+            errorbar=None, estimator=np.max)
+plt.show()
+import numpy as np
+sns.barplot(x='KV', y='M1', hue='KT', 
+            data=df, errorbar=None, estimator=np.max)
+plt.show()
+# BIỂU ĐỒ PIE
+gb = df.groupby(['KT'])['KT'].agg(['count'])
+labels = gb.index # labels = ['A','A1','B','C','D1']
+data = list(gb['count']) # data= [49,6,9,14,22]
+colors = sns.color_palette('pastel') # Tạo bảng màu
+plt.pie(data, labels=labels, colors=colors, 
+        autopct='%1.1f%%', shadow=True)
+plt.show()
+# Nếu bỏ autopct='%1.1f%%' thì ko ra số %
+# Gía trị của ô xanh là bao nhiêu
+# Thống kê tỉ lệ phần trăm cho khu vực
+gb = df.groupby(['KV'])['KV'].agg(['count'])
+labels = gb.index # labels = ['A','A1','B','C','D1']
+data = list(gb['count']) # data= [49,6,9,14,22]
+colors = sns.color_palette('pastel') # Tạo bảng màu
+plt.pie(data, labels=labels, colors=colors, 
+        autopct='%1.1f%%', shadow=True)
+plt.show()
+# trực quan tỉ lệ % tổng điểm plus theo cột KV
+gb = df.groupby(['KV'])['PLUS'].agg(['sum'])
+labels = gb.index
+data = list(gb['sum'])
+colors = sns.color_palette('pastel') # Tạo bảng màu
+plt.pie(data, labels=labels, colors=colors, 
+        autopct='%1.1f%%', shadow=True)
+
+plt.show()
+# vd: khu vực nào dc cộng điểm ít nhất
+# tổng hợp tb M1 theo các kỳ thi (năm thi)
+sns.lineplot(x='NT', y='M1', data=df)
+plt.show()
+# trực quan dl M1 lớn hất
+sns.lineplot(x='NT', y='M1', data=df, estimator=np.max)
+plt.show()
+# tổng hợp điểm thi M1 của NT theo GT
+sns.lineplot(x='NT', y='M1', hue='GT', 
+             data=df, estimator=np.max)
+plt.show()
+# PHẦN 4: Phân tích định lượng - THỐNG KÊ MÔ TẢ
+# Phân tích định lượng lấy trọng tâm là các biến định lượng
+# Mục đích: Mô tả trí thức đang ẩn chứa bên trong dữ liệu, thông qua ý nghĩa các đại lượng toán học.
+# Có 2 nhóm đại lượng mô tả:
+# -Đo lường độ tập trung:min, max, mean, mode,p-phân vị
+# -Đo lường độ phân tán: range, IQR, độ lệch trung bình
+# Thống kể dữ liệu (Mô tả dữ liệu)
+
+# Các đại lượng đo lưởng mức độ tập trung (phân bố của dữ liệu)
+print(f'{df["M1"].min()}\n{df["M1"].max()}\n')
+print(f'{df["M1"].mean()}\n{df["M1"].median()}\n')
+print(f'{df["KT"].mode()}\n')
+print(f'{df["M1"].quantile(0.25)}\n') #phân vị thứ 25, Q1=0.25,Q2=0.5,Q3=0.75
+# Hãy tính phân vị thứ 9 trong thập phân vị (gọi là p9) cho M1 và M2
+# Gợi ý: phân vị thứ 9 có tỉ lệ là 0.9
+print(f'{df["M1"].quantile(0.9)}\n')
+print(f'{df["M2"].quantile(0.9)}\n')
+# Các đại lượng đo lường độ biến động (phân tán)
+#range
+range = df['M1'].max() - df['M1'].min()
+range
+# IQR =Q3-Q1 (trong đó Q1=0.25, Q2=0.5, Q3=0.75)
+iqr =df['M1'].quantile(0.75) - df['M1'].quantile(0.25)
+iqr
+# Hãy cho biết độ lớn khoảng dao động của M2 (gợi ý: |range|: trị tuyệt đối)
+range = df['M2'].max() - df['M2'].min()
+range
+# Độ lớn của IQR của M2 là bao nhiêu (gợi ý: |IQR|)
+
+# Khoảng giá trị IQR của M2 (gợi ý: [Q1;Q3])
+iqr =df['M2'].quantile(0.75) - df['M2'].quantile(0.25)
+iqr
+
+# Độ lệch trung bình (deltaD)
+deltaD = np.mean(np.abs(df['M1'] - np.mean(df['M1'])))
+deltaD
+# hÃY tính khoảng range cho M1 và M2
+df[['M1','M2']].max() - df[['M1','M2']].min()
+# Hãy tính độ lớn IQR cho M1 và M2
+df[['M1','M2']].quantile(0.75) - df[['M1','M2']].quantile(0.25)
+# Hãy tính độ lệch trung bình cho M1 và M2
+deltaD= np.mean(np.abs(df[['M1','M2']] - np.mean(df[['M1','M2']])))
+deltaD
+# Phương sai variance (var)
+df['M1'].var()
+# Độ lệch chuẩn standard deviation (std) -?sử dụng này nhiều hơn var
+df['M1'].std()
+# Phương pháp sử dụng std để so sánh
+# mức độ biến động của hai hay nhiều biến số
+# Ví dụ: hãy so sánh mức độ ổn định của M1 và M2
+
+print(df[['M1','M2']].mean())
+print(df[['M1','M2']].std())
+# Lưu ý: cần đảm bảo M1,M2 cùng hệ qui chiếu
+# (độ đo đơn vị so sánh) và 
+# giá trị trung bình M1 và M2 xấp xỉ nhau
+# Phương pháp dùng Cofficient of variance (CV) để
+# mức độ biến động của hay hay nhiều biến số
+# Hãy so sánh mức độ biến động của M1 và M2
+df[['M1','M2']].std()/df[['M1','M2']].mean()
+# Sử dụng CV để so sánh mức độ phân tán của M1,M2,M3
+# Hướng dẫn tính nhanh CV
+cv = df[['M1','M2','M3']].std() / df[['M1','M2','M3']].mean()
+list(cv)
+# CHƯA XONG
+# BT: sinh viên viết code để tìm ra giá trị cv lớn nhất và nhỏ nhất
+# Hãy sắp xếp tăng dần danh sách các giá trị cv
+cv = df[['M1','M2','M3']].min() / df[['M1','M2','M3']].max()
+list(cv)
+# Mô tả biến định lượng 
+df['M1'].describe()
+df[['M1','M2','M3']].describe()
+df.groupby('GT')['M1'].describe()
+# Câu hỏi: đánh giá xem nhóm giới tính nào thi M1 tốt hơn
+# ->ss mean và mức độ phân tán
+# Tính CV cho M1 theo nhóm giói tính
+df.groupby('GT')['M1'].std()/df.groupby('GT')['M1'].mean()
+# Tính CV cho M2 theo nhóm giói tính
+df.groupby('GT')['M2'].std()/df.groupby('GT')['M2'].mean()
+# Câu hỏi đặt ra: (CHƯA XONG)
+# Sinh viên giới tính nam thì thi môn nào tốt hơn so vs nữ
+# Lưu ý: chỉ dùng 2 dùng code thể hiện kết quả
+# TÍNH TB CHO M1 M2 M3 TRÊN TỪNG GT
+# SAU ĐÓ TÍNH GÍA TRỊ CV  CHO TỪNG NHÓM GIỚI TÍNH -> ĐÁP ÁN: M2
+df.groupby('GT')[['M1','M2','M3']].mean()
+df.groupby('GT')['M2'].std()/df.groupby('GT')['M2'].mean()
+# Histogram là biểu đồ mô tả phân phối ( hay xác suất của biến định lượng )
+# Mục đích cho biết xác xuất xảy ra của biến cố trong khoảng giá trị dl nhiều nhất
+
+df['M1'].hist()
+plt.show()
+# Lưu ý: khi số lượng bins khác nhau sẽ dẫn đến hình dáng khác nhau
+df['M1'].hist(bins=14)
+plt.show()
+# KHOẢNG 1->1.5->2.0->2.5->7 (14 KHOẢNG)
+# Nâng cao hơn histogram, thì ta khám phá dạng phân phối xác suất
+# Làm mịn vs phân phối xác xuất
+sns.displot(df, x='M1', kind='kde') #kde: dạng hình bên dưới
+plt.show()
+# ứng dụng histogram điều chỉnh dl trờ thành phân phối chuẩn (dạng hình đều )
+sns.displot(data = df[['M1','M2','M3']], kind='kde')
+plt.show()
+# M1 gần giống phân phối chuẩn hơn 
+# 2M kia thì cao và ốm
+sns.displot(df, x='M1', hue='GT', kind='kde')
+plt.show()
+# F gần giống phân phối chuẩn hơn
+
+# Skeness = độ xiên, độ lớn(trị tuyệt đối) cho biết mức độ dl 
+# lệch nhiều hay ít so vs đường cong phân phối chuẩn
+# cho biết xác suất dc phân bổ lệch về phía nào nhiều
+# Trị tuyệt đối giá trị càng lớn thì dl phân phối nghiêng càng nhiều (lệch)
+# skeness >0 : lệch phải
+# skewness <0: lệch trái
+# skew gần bằng 0 thì càng đối xứng ->gần phân phối chuẩn
+# skew gần bằng 0 thì càng đối xứng ->gần phân phối chuẩn
+df['M1'].skew()
+df[['M1','M2','M3']].skew()
+# kurtosis
+# thin(hình đỉnh nhọn): excess>0; fit: excess=0 ->gần phân phối chuẩn
+df[['M1']].kurtosis()
+df[['M1','M2','M3']].kurtosis()
+sns.displot(data = df[['M1','M2']], kind='kde')
+plt.show()
+# krutosis màu cam lớn hơn
+sns.boxplot(data=df['M1'], orient="h")
+plt.show()
+# nhìn khối màu xanh 
+# chiều ngang khối màu xanh-> dộ lơn1 iqr
+# cận dưới: râu bên trái cùng
+# cận trên: râu bên phải cùng
+# ngoài 2 cận ra là giá trị bất thuòng
+sns.boxplot(data=df[['M1','M2','M3']], orient='h')
+plt.show()
+# điểm dấu chấm -> bất thường
+sns.boxplot(x='M1', y='KT',data=df, orient='h')
+plt.show()
+sns.boxplot(x='M1', y='GT',data=df, orient='h')
+plt.show()
+# 1.M1 trên giới tính nào có bất thường
+# 2.Yếu tố giới tính (GT) có đóng góp trong b=việc dự báo -> có dự báo vì iqr khác nhau (trong trường hợp này)
+sns.boxplot(x='KT', y='M1',hue='GT',data=df)
+plt.show()
+# câu hỏi: xác định các biễu đồ dữ liệu bất thường
+# bất thường là các dấu chấm tròn
+from scipy import stats
+stats.probplot(df['M1'],plot=sns.mpl.pyplot)
+plt.show()
+# những điểm màu xanh không nằm hết trên đường đỏ nên nó ko gần giống phân phối chuẩn
+# điểm xanh là M1
+# Phân tích sự tương quan (tác động, ảnh hưởng) qua lại giửa 2 biến định lượng
+df[['M1','M2']].cov()
+# m1-m1 và m2-m2 ko xét
+# m1-m2 tương quan thuận
+# m2-m1 tương quan thuận
+# MA TRẬN TƯƠNG QUAN
+# r nằm trong khoảng [-1,1]
+# r=0 => 
+# 
+# 
+# 
+# ||
+
+df[['M1','M2']].corr()
+# dương chéo chính nó tương quan =1( giá trị lớn nhất)
+df[['M1','M2','M3']].corr()
+sns.lmplot(data=df, x='M1', y='M2', fit_reg=True)
+plt.show()
+# điểm xanh mà nằm trên đường xanh thì tương quan rất tốt 
+sns.heatmap(df[['M1','M2','M3']].corr(), vmax=1.0, square=False).xaxis.tick_top()
+sns.lmplot(data=df, x='M1', y='M2',hue='GT', fit_reg=True)
+plt.show()
+# tương quan của m1,m2 của nhóm nam cao hơn nhóm nữ
+
+# biểu đồ tổng hợp khám phá tổng hợp nhiểu biến định lượng
+sns.pairplot(df[['M1','M2','M3']],diag_kind='kde', kind='reg')
+plt.show()

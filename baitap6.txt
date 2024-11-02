@@ -1,0 +1,96 @@
+# GIOI THIEU VE TRI TUE NHAN TAO (ARTIFICIAL INTELLIGENCE)
+# 1 so bai toan ma AI hien nay dang giai quyet:
+# Phan lop, hoi quy, gom cum, luat ket hop
+# Cac ky thuat phan lop su dung hoc may 
+# mo ta ky thuat hoc5 may1 co 3 thanh phan: xac dinh input -> modal -> output
+# dua vao dl ma phan thanh 2 loai kythuat hoc5 may1 co ban: (hoc co giam sat va hoc khong giam sat)
+# neu input va output co san (co san trong tap dl): hoc co giam sat 
+# neu input(IQ,EQ,AGE) (co san trong tap dl )va output ko co san trong tap dl: hoc khong co giam sat
+CUỐI KỲ PHÂN LỚP VÀ HỒI QUY
+giới thiệu K-NN (Lazy learning: học lười) -> lựa K thằng gần nhất để đưa ra quyết định (ví dụ: k=5)
+giả sử lớp học có 11 học sinh
+cô giáo đã lấy ra điểm trung bình để xếp loại
+cho 5-NN 
+lấy x=7.0 -> xếp loại: ?
+5-NN (LẤY 5 hs có điểm gần vs 7.0 nhất)
+An-> K
+B-> K
+D-> K
+E-> K
+L-> TB
+=> 80% K, 20% TB => 7.0 là K
+Nếu quy định ngưỡng của nó là 85% thì kết quả bằng 0
+Ý tưởng của K-NN chi dua vao dl có sẵn  ma khong hut thich tri thuc. VD 5-NN lấy 5 phần tử gần nhất vs phấn tử đề, sau đó xem xác suất nào chiếm tỉ lệ nhiều thì lấy cái đó
+Xác suất tiền quyết dinh la xac suat cua cca nhan phan loai khi di qua mo hinh truoc khi duoc  quyet dinh. Ngưỡng quyết định là mốc để đưa ra sự lựa chọn.
+độ lệch càng cao thì càng ko giống nhau
+độ lệch càng thấp thì càng giống nhau
+
+t_index: chỉ số xét nghiệm t
+c_index: chỉ số xét nghiệm c
+target=1 : bệnh tim
+target=0: ko bệnh tim
+<t_i,c_i> (vector)
+X=<150,200>
+công thức elit
+dx/An= căn((150-145)^2+(200-233)^2)=33.37
+lấy ra 5 hs gần X nhất
+    [0,1] => 0 xuất hiện 1 lần, 1 xuất hiện 4 lần
+=> [0.2,0.8] (không có ngưỡng qui định) thì X=1 bệnh 
+
+# Bước 1:
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+df = pd.read_excel('heart_short.xlsx',sheet_name="data")
+df
+# input t_i, c_I; output: target
+df.index
+# Bước 2: Xử lý dữ liệu
+# Tập dữ liệu input (dặc trưng) và output (mục tiêu)
+X = df[['t_i','c_i']].values # input
+y = df[['result']].values # output
+# Đảm bảo dữ liệ là kiểu số thực
+X = X.astype(float)
+y = y.astype(float)
+# Bước 3: Chia tập dữ liệu thành 2 phần training và testing
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test,indices_train, indices_test= train_test_split(X,y,df.index,test_size=0.4, random_state=34)
+print(indices_test)
+# đáp án: [0,11,8,2,7]
+# Bước 4: Huấ luyện mô hình vs k=5
+from sklearn.neighbors import KNeighborsClassifier
+knnModel = KNeighborsClassifier(n_neighbors=5)
+knnModel.fit(X_train, y_train)
+ĐÁNH GIÁ
+PP Accuracy 
+
+#  Dự báo mô hình trên tập X_test => tính bỏi mô hình là kết quả dự báo
+y_test_predicted =knnModel.predict(X_test)
+y_test_predicted
+# sheet có cột toàn 0
+# để đánh giá độ chính xác của mô hình vs độ đo Accuraty
+from sklearn.metrics import accuracy_score
+accuracy_score(y_test,y_test_predicted)
+# hoặc dùng để đánh giá độ chính xác của mô hình vs độ đo Accuraty
+knnModel.score(X_test, y_test)
+#  câu hỏi: tập giá trị nhãn để dự báo là gì? -->kết luận
+classes=knnModel.classes_
+classes
+# kq: phân lớp nhị phân
+# có nhãn 0 vs 1
+# Câu hỏi: xác suất tiền quyết định (trước khi ) quyết định => câu hỏi thi CK
+y_test_prob =knnModel.predict_proba(X_test)
+y_test_prob
+#  bao nhiêu thằng đứng gần
+# dòng 1: có 1 thằng đứng gần nó bị bệnh (vì theo câu hỏi trên kia co nhãn 0 và 1)
+# Câu hỏi: thiết lập ngưỡng (thresold) quyết định là 0.85
+# thì kq accuracy thay đổi ra sao
+print('prediction with thresold 0.85:')
+y_pred_test_085=(knnModel.predict_proba(X_test)[:, 1]>=0.85).astype(float)
+y_pred_test_085
+# tạo confusion matric trong python bị ngược
+from sklearn.metrics import confusion_matrix
+cf_matrix = confusion_matrix(y_test, y_test_predicted)
+
+cf_matrix
+# Câu hỏi: căn cứ vào các giá trị TN,FP,FN,TP giá trị nào 

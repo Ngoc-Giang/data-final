@@ -1,0 +1,174 @@
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+df = pd.read_excel('data_mlr.xlsx',sheet_name="data")
+df
+sns.pairplot(df[['gold','fuel','food']], 
+             diag_kind='kde', kind='reg')
+plt.show()
+# Tập dữ liệu Input (đặc trưng) và Output (mục tiêu)
+X = df[['gold','fuel']].values # explanatory = feature = idependent 
+y = df[['food']].values # reponse = target
+# Đảm bảo dữ liệu là kiểu số thực
+X = X.astype(float)
+y = y.astype(float)
+# Cross Validation
+# Chia tách ra training (huấn luyện) và testing (kiểm thử)
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.5, 
+                                                    random_state=16)
+
+X_train
+y_train
+from sklearn import linear_model 
+# Khai báo mô hình SLR
+model = linear_model.LinearRegression()
+
+# Huấn luyện mô hình 
+model.fit(X_train,y_train)# Khai báo mô hình SLR
+model = linear_model.LinearRegression()
+
+# Huấn luyện mô hình 
+model.fit(X_train,y_train)
+print(model.intercept_) #b0
+
+print(model.coef_) #b1, b2
+import numpy as np
+from sklearn import metrics
+
+# Tính giá trị dự báo ProfitRate dựa trên dữ liệu TimeAds của tập test
+y_test_pred = model.predict(X_test)
+
+print('Score or R-Squared:', model.score(X_test, y_test))
+
+print('Mean Absolute Error:', 
+      metrics.mean_absolute_error(y_test, y_test_pred))  
+print('Root Mean Squared Error:', 
+      np.sqrt(metrics.mean_squared_error(y_test, y_test_pred)))
+print('Mean Absolute Percentage Error:', 
+      metrics.mean_absolute_percentage_error(y_test, y_test_pred))
+# thay doi qua nhieu
+y_test_pred = model.predict(X_test)
+
+plt.scatter(y_test, y_test_pred, c='crimson')
+
+p1 = max(max(y_test_pred), max(y_test))
+p2 = min(min(y_test_pred), min(y_test))
+
+plt.plot([p1, p2], [p1, p2], 'b-')
+plt.xlabel('True Values', fontsize=15)
+plt.ylabel('Predictions', fontsize=15)
+plt.axis('equal')
+plt.show()
+# (Train data set) Vẽ residual cho  feature 0(goal) bang Python
+sns.residplot(x=X_train[:,0], y=y_train)
+plt.show()
+# (Train data set) Vẽ residual cho  feature 1(fuel) bang Python
+sns.residplot(x=X_train[:,1], y=y_train)
+plt.show()
+# Lưu trữ mô hình đã huấn luyện xuống ổ đĩa
+# '''
+# Lưu trữ mô hình hồi quy xuống thiết bị lưu trữ với tên
+# model_linear_regression.sav
+# '''
+import pickle
+pickle.dump(model, open('model_MLR.sav', 'wb'))
+
+
+import pickle
+#Load model từ storage
+loaded_model = pickle.load(open('model_MLR.sav', 'rb'))
+
+vTimeAds = float(input('Nhập gia gold: '))
+
+predicted_ProfitRate = loaded_model.predict([[vTimeAds]])
+
+print(f'Dự báo điểm ProfitRate là: {predicted_ProfitRate}')
+# dua vao tap train. Hay tim tong excilon^2 nho nhat
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+df = pd.read_excel('data_mlr.xlsx',sheet_name="data")
+df
+sns.pairplot(df[['gold','fuel','food']], 
+             diag_kind='kde', kind='reg')
+plt.show()
+# Tập dữ liệu Input (đặc trưng) và Output (mục tiêu)
+X = df[['gold','fuel']].values # explanatory = feature = idependent 
+y = df[['food']].values # reponse = target
+# Đảm bảo dữ liệu là kiểu số thực
+X = X.astype(float)
+y = y.astype(float)
+# Cross Validation
+# Chia tách ra training (huấn luyện) và testing (kiểm thử)
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.5, 
+                                                    random_state=16)
+
+X_train
+y_train
+from sklearn import linear_model 
+# Khai báo mô hình SLR
+model = linear_model.LinearRegression()
+
+# Huấn luyện mô hình 
+model.fit(X_train,y_train)# Khai báo mô hình SLR
+model = linear_model.LinearRegression()
+
+# Huấn luyện mô hình 
+model.fit(X_train,y_train)
+print(model.intercept_) #b0
+
+print(model.coef_) #b1, b2
+import numpy as np
+from sklearn import metrics
+
+# Tính giá trị dự báo ProfitRate dựa trên dữ liệu TimeAds của tập test
+y_test_pred = model.predict(X_test)
+
+print('Score or R-Squared:', model.score(X_test, y_test))
+
+print('Mean Absolute Error:', 
+      metrics.mean_absolute_error(y_test, y_test_pred))  
+print('Root Mean Squared Error:', 
+      np.sqrt(metrics.mean_squared_error(y_test, y_test_pred)))
+print('Mean Absolute Percentage Error:', 
+      metrics.mean_absolute_percentage_error(y_test, y_test_pred))
+# thay doi qua nhieu
+y_test_pred = model.predict(X_test)
+
+plt.scatter(y_test, y_test_pred, c='crimson')
+
+p1 = max(max(y_test_pred), max(y_test))
+p2 = min(min(y_test_pred), min(y_test))
+
+plt.plot([p1, p2], [p1, p2], 'b-')
+plt.xlabel('True Values', fontsize=15)
+plt.ylabel('Predictions', fontsize=15)
+plt.axis('equal')
+plt.show()
+# (Train data set) Vẽ residual cho  feature 0(goal) bang Python
+sns.residplot(x=X_train[:,0], y=y_train)
+plt.show()
+# (Train data set) Vẽ residual cho  feature 1(fuel) bang Python
+sns.residplot(x=X_train[:,1], y=y_train)
+plt.show()
+# Lưu trữ mô hình đã huấn luyện xuống ổ đĩa
+# '''
+# Lưu trữ mô hình hồi quy xuống thiết bị lưu trữ với tên
+# model_linear_regression.sav
+# '''
+import pickle
+pickle.dump(model, open('model_MLR.sav', 'wb'))
+
+
+import pickle
+#Load model từ storage
+loaded_model = pickle.load(open('model_MLR.sav', 'rb'))
+
+vTimeAds = float(input('Nhập gia gold: '))
+
+predicted_ProfitRate = loaded_model.predict([[vTimeAds]])
+
+print(f'Dự báo điểm ProfitRate là: {predicted_ProfitRate}')
+# dua vao tap train. Hay tim tong excilon^2 nho nhat

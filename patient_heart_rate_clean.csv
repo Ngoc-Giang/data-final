@@ -1,0 +1,13 @@
+,index,Firstname,Lastname,Id,Age,Weight_kgs,PulseRate,Gender,Lower_hour,Upper_hour
+0,0,Dewey,McDuck,7,19,56.0,71,f,00,06
+1,1,Donald,Duck,2,34,70.0,85,f,00,06
+2,2,Henry,Nam,11,34,60.0,78,m,00,06
+3,3,Huey,McDuck,6,52,85.0,68,f,00,06
+4,4,Louie,McDuck,10,12,45.0,92,f,00,06
+5,5,Michel,Long,12,34,74.0,65,m,00,06
+6,6,Micky,Mous,1,56,70.0,72,m,00,06
+7,7,Mini,Mouse,3,16,74.0,65,f,00,06
+8,8,Pink,Panther,5,54,90.0,69,f,00,06
+9,9,Scpy,Doo,8,32,78.0,78,m,00,06
+10,10,Scrooge,McDuck,4,34,78.0,78,m,00,06
+11,11,Tana,Ricky,13,34,74.0,68,f,00,06

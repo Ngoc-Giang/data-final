@@ -1,0 +1,29 @@
+import pandas as pd
+form sklearn.tree import DecisionTreeClassifier
+form sklearn.model_selection import train_test_split
+form sklearn import metrics
+df=pd.read_excel('lophoc.xlsx',sheet_name="data")
+# cắt dl thành 2 phần
+x=df.iloc[:,:-1] #feature
+y=df.iloc[:,-1] #target
+form sklearn.preprocessing import LabelEncoder
+enHealth=LabelEncoder()
+X['Sức khỏe']=enHealth 
+# suc khoe tot:0
+# thoi tiet u am:2
+# split dataset
+X_train, X_test, y_train, y_test= train_test_split(X,y,test_size=0.2, random_state=34)
+modeIDT=DecisionTreeClassifier
+form sklearn.tree import plot_tree
+import matplotlib.pyplot as plt
+feature_cols=X_train.columns
+plt.figure(figsize=(15,10))
+plot_tree(modeIDT,feature_name=feature_cols,class_name=modeIDT.class_,fontsize=12,filled=True)
+plt.show()
+y_test_pred=modeIDT.predict(X_test)
+print("Accuracy: ",metric.accuracy_score(y_test,y_test_pred))
+
+# tạo Confusion-Metric
+form sklearn.metrics import Confusion_matrix
+cf_matric=confusion_matrix(y_test,y_test_pred)
+cf_matric

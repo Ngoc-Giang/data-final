@@ -1,0 +1,145 @@
+import pandas as pd
+df = pd.read_csv('dulieuxettuyendaihoc.csv',
+                 header=0,delimiter=',',encoding='utf-8')
+df.rename(columns={'NGAYTHI':'NT',
+                   'DINHHUONGNGHENGHIEP':'NGHE'}, 
+                   inplace=True)
+df
+
+# CÂU 1: 
+dfKhoiC = df.loc[df['KT'] == 'C']
+dfKhoiC['M1']
+# 14 giá trị M1
+import scipy.stats as stats
+# với one sample T-test thì giả thiết Ho: muy=4.0
+# Mặc định mức tin cậy là 95% và mức sai lầm là 5%
+stats.ttest_1samp(dfKhoiC['M1'], popmean=4.0)
+# không đủ dữ kiện để nói rằng trung bình điểm M1 là 4.0 với mức sai lầm là 5%
+#sinh viên ktra xem điểm trung bình của mon6 thi M2 cò1 bằng 5.7 hay không
+stats.ttest_1samp(dfKhoiC['M2'], popmean=5.7)
+#sv tự nghiên cứu cách thiết lập các độ tin cậy khác
+# 2
+from statsmodels.stats.weightstats import ztest as ztest
+# hãy ktra xem trung bình M1 có bằng 8.0
+ztest(df['M1'], value=8.0)
+sinh viên tự kết luận p_value=1.55x10^-6
+# hãy ktra xem trung bình M2 có bằng 6.7
+ztest(df['M2'], value=6.7)
+# câu 2: Hãy ktra xem điểm tb điểm thi M1 và M2 co1 bằng nhau ko
+#Two sample T-test
+dfKhoiC = df.loc[df['KT'] == 'C']
+stats.ttest_ind(dfKhoiC['M1'], dfKhoiC['M2'], equal_var=True)
+tìm hiểu các mức sai lầm khác 1%,10%
+# kitra trung binh cua M1 và M22 có bằng nhau ko vs mức tin cậy 95%
+ztest(df['M2'], df['M3'], value=0)
+from statsmodels.stats.weightstats import ztest as ztest
+ztest(df['M1'], df['M2'], value=0)
+# p_value=0.003
+# kitra trung binh cua M2 và M3 có bằng nhau ko vs mức tin cậy 95%
+ztest(df['M2'], df['M3'], value=0)
+# kiểm định tương quan giữa 2 biến định lượng
+# Ho: r=0
+from scipy.stats.stats import pearsonr
+
+pearsonr(df['M1'],df['M2'])
+#ko đủ dữ kiện để nói rằng X và Y ko tương quan
+# ktra tương quan giữa M1 và M3
+pearsonr(df['M1'],df['M3'])
+# không tương quan
+# ktra tương quan giữa M2 và M3
+pearsonr(df['M2'],df['M3'])
+# 6.Fishen
+import scipy.stats as stats
+crosdata = pd.crosstab(df['GT'], [df['NGHE']], rownames=['GT'], colnames=['NGHE'])
+crosdata
+# có bao nhiêu sinh viên nữ được định lượng
+odd_ratio, p_value = stats.fisher_exact(crosdata)
+print('odd ratio is : ' + str(odd_ratio))
+print('p_value is : ' + str(p_value))
+# việc ktra là khách quan độc lập
+#7.Chi-Square TEST
+# Mục dích kitra 
+# Ho:ko có sự khác bt giửa 2 biến định tính
+from scipy.stats import chi2_contingency
+crosdata = pd.crosstab(df['KV'], [df['KT']], rownames=['KV'], colnames=['KT'])
+crosdata
+# khu vực 1 khối A là đông nhất
+stat, p, dof, expected = chi2_contingency(crosdata)
+ 
+alpha = 0.05
+print("p value is " + str(p))
+if p <= alpha:
+    print('Dependent (reject H0)')
+else:
+    print('Independent (H0 holds true)')
+# Ho:KT độc lập KV
+# p_value=0.02<anpla
+# khối thi phụ thuộc vào khu vực
+# reject:bác bỏ
+# GT và KT có mối quan hệ hay không?
+crosdata = pd.crosstab(df['GT'], [df['KT']], rownames=['GT'], colnames=['KT'])
+crosdata
+stat, p, dof, expected = chi2_contingency(crosdata)
+ 
+alpha = 0.05
+print("p value is " + str(p))
+if p <= alpha:
+    print('Dependent (reject H0)')
+else:
+    print('Independent (H0 holds true)')
+# gt và kt có quan hệ vs nhau
+# 8.ONE WAY ANOVA
+# ĐIỂM M1 có phụ thuộc vào gt ko?
+
+import statsmodels.api as sm
+from statsmodels.formula.api import ols
+
+model = ols('M1 ~ GT', data=df).fit()
+aov_table = sm.stats.anova_lm(model, typ=1)
+aov_table
+# không phu5 thuộc vào GT
+# ĐIỂM M2 có phụ thuộc vào KHU VỰC ko?
+model = ols('M2 ~ KV', data=df).fit()
+aov_table = sm.stats.anova_lm(model, typ=1)
+aov_table
+# ACCEPT
+# ĐIỂM M3 có phụ thuộc vào kt ko?
+model = ols('M3 ~ KT', data=df).fit()
+aov_table = sm.stats.anova_lm(model, typ=1)
+aov_table
+# ACCEPT
+model = ols('M1 ~ GT + KV + GT:KV',data=df).fit()
+result = sm.stats.anova_lm(model, type=2)
+print(result)
+# KO PHỤ THUỘC
+# Phân tích xem M2 có phụ thuộc trên nhóm KV
+# Theo từng loại KT hay không?
+model = ols('M2 ~ KV + KT + KV:KT',data=df).fit()
+result = sm.stats.anova_lm(model, type=2)
+print(result)
+# M2-CHẤP NHẬN ĐỘC LẬP
+# M2-BÁC BỎ PHỤ THUỘC
+# CHẤP NHẬN ĐỘC LẬP
+# KHÔNG PHỤ THUỘC (ĐỘC LẬP)
+# REJECT
+import statsmodels.api as sm
+X_with_constant = sm.add_constant(df[["M1"]].values)
+y = df[['M3']].values
+result = sm.OLS(y, X_with_constant).fit()
+print(result.summary())
+# M2 ảnh hưởng ntn vs M3, nếu biết trước M2=5.7
+import statsmodels.api as sm
+X_with_constant = sm.add_constant(df[["M2"]].values)
+y = df[['M3']].values
+result = sm.OLS(y, X_with_constant).fit()
+print(result.summary())
+import statsmodels.api as sm
+X_with_constant = sm.add_constant(df[["M1","M2"]].values)
+y = df[['M3']].values
+result = sm.OLS(y, X_with_constant).fit()
+print(result.summary())
+# mức độ tác động
+X = df[["M1","M2"]].values
+y = df[['M3']].values
+result = sm.OLS(y, X).fit()
+print(result.summary())
